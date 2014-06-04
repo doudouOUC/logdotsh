@@ -2,14 +2,14 @@
 # vim: set expandtab smarttab shiftwidth=4 tabstop=4:
 
 #
-# Author: tuantuan.lv <dangoakachan@foxmail.com>
-# Status: Development
+# Author: kodango <dangoakachan@foxmail.com>
 # Description: defines functions for printing log messages.
 #
 
 # {{ Global constants definition
 
 # Log level constants
+LOG_QUIET=-1      # Level quiet
 LOG_ERROR=0       # Level error
 LOG_WARNING=1     # Level warning
 LOG_INFO=2        # Level info
@@ -21,10 +21,11 @@ LOG_LEVELNAMES=('ERROR' 'WARNING' 'INFO' 'DEBUG')
 # Support colors
 SUPPORT_COLORS='red yellow blue white cyan gray purple green'
 
+_logdotsh_sourced_="__logdotsh_sourced_$$__"
+
 # Determines whether the default value have be set
-if [ -z "$_log_set_default" ]; then
-    # Set the flag to 1  
-    _log_set_default=1
+if [ -z "${!_logdotsh_sourced_}" ]; then
+    eval "$_logdotsh_sourced_=1"
 
     # Default log file
     if [ ! -f "$0" ]; then
@@ -33,6 +34,13 @@ if [ -z "$_log_set_default" ]; then
         base=$(basename $0 | awk -F. '{print $1}')
         _log_file="/tmp/$base.log.`date +'%Y%m%d'`"
         unset base
+    fi
+
+    # Change the permission of log file
+    if [ ! -f "$_log_file" ]; then
+        mkdir -p `dirname $_log_file`
+        touch $_log_file
+        chmod 666 $_log_file
     fi
 
     # Show log whose level less than this
@@ -128,49 +136,73 @@ function exit_msg()
 function red()
 {
     local fmt=$1
-    shift && printf "\033[1;31m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;31m$fmt" "$@"
+    #shift && printf "\033[1;31m${fmt}\033[0m" "$@"
 }
 
 function green()
 {
     local fmt=$1
-    shift && printf "\033[1;32m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;32m$fmt" "$@"
+    #shift && printf "\033[1;32m${fmt}\033[0m" "$@"
 }
 
 function gray()
 {
     local fmt=$1
-    shift && printf "\033[1;37m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;37m$fmt" "$@"
+    #shift && printf "\033[1;37m${fmt}\033[0m" "$@"
 }
 
 function yellow()
 {
     local fmt=$1
-    shift && printf "\033[1;33m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;33m$fmt" "$@"
+    #shift && printf "\033[1;33m${fmt}\033[0m" "$@"
 }
 
 function blue()
 {
     local fmt=$1
-    shift && printf "\033[1;34m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;34m$fmt" "$@"
+    #shift && printf "\033[1;34m${fmt}\033[0m" "$@"
 }
 
 function cyan()
 {
     local fmt=$1
-    shift && printf "\033[1;36m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;36m$fmt" "$@"
+    #shift && printf "\033[1;36m${fmt}\033[0m" "$@"
 }
 
 function purple()
 {
     local fmt=$1
-    shift && printf "\033[1;35m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;35m$fmt" "$@"
+    #shift && printf "\033[1;35m${fmt}\033[0m" "$@"
 }
 
 function white()
 {
     local fmt=$1
-    shift && printf "\033[1;38m${fmt}\033[0m" "$@"
+
+    fmt=$(echo "$fmt" | sed -r 's/(\\n)?$/\\033[0m\1/')
+    shift && printf "\033[1;38m$fmt" "$@"
+    #shift && printf "\033[1;38m${fmt}\033[0m" "$@"
 }
 
 # Colorful print end }}
@@ -180,8 +212,10 @@ function white()
 # Set default log level
 function set_loglevel()
 {
-    if echo "$1" | grep -qE "^[0-9]+$"; then
+    if echo "$1" | grep -qE "^[-0-9]+$"; then
         _log_level="$1"
+    elif echo "$1" | grep -qE '^LOG_(QUIET|DEBUG|INFO|ERROR|WARNING)$'; then
+        _log_level="${!1}"
     fi
 }
 
@@ -189,8 +223,24 @@ function set_loglevel()
 function set_logfile()
 {
     if [ -n "$1" ]; then
+        #if [ ! -s "$_log_file" ]; then
+        #    rm -f $_log_file
+        #fi
+
         _log_file="$1"
+
+        if [ ! -f "$_log_file" ]; then
+            mkdir -p `dirname $_log_file`
+            touch $_log_file
+            chmod 666 $_log_file
+        fi
     fi
+}
+
+# Get the log file
+function get_logfile()
+{
+    echo "$_log_file"
 }
 
 # Set log format
